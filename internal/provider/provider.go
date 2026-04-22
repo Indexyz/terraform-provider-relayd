@@ -33,15 +33,8 @@ func (p *RelaydProvider) Schema(_ context.Context, _ provider.SchemaRequest, res
 	resp.Schema = providerschema.Schema{
 		MarkdownDescription: "The relayd provider manages authenticated HTTP control-plane resources exposed by relayd.",
 		Attributes: map[string]providerschema.Attribute{
-			"base_url": providerschema.StringAttribute{
-				MarkdownDescription: "Base URL for the relayd API server. If omitted, the provider uses the RELAYD_BASE_URL environment variable. The `/v1` API path is added automatically when necessary.",
-				Optional:            true,
-			},
-			"bearer_token": providerschema.StringAttribute{
-				MarkdownDescription: "Bearer token for relayd API authentication. If omitted, the provider uses the RELAYD_BEARER_TOKEN environment variable.",
-				Optional:            true,
-				Sensitive:           true,
-			},
+			"base_url": providerschema.StringAttribute{MarkdownDescription: "Base URL for the relayd API server. If omitted, the provider uses the RELAYD_BASE_URL environment variable. The `/v1` API path is added automatically when necessary.", Optional: true},
+			"bearer_token": providerschema.StringAttribute{MarkdownDescription: "Bearer token for relayd API authentication. If omitted, the provider uses the RELAYD_BEARER_TOKEN environment variable.", Optional: true, Sensitive: true},
 		},
 	}
 }
@@ -52,19 +45,16 @@ func (p *RelaydProvider) Configure(ctx context.Context, req provider.ConfigureRe
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
 	resolvedConfig, err := resolveProviderConfig(data.BaseURL, data.BearerToken)
 	if err != nil {
 		resp.Diagnostics.AddError("Invalid provider configuration", err.Error())
 		return
 	}
-
 	client, err := newRelaydClient(resolvedConfig)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to configure relayd client", err.Error())
 		return
 	}
-
 	resp.DataSourceData = client
 	resp.ResourceData = client
 }
@@ -72,6 +62,7 @@ func (p *RelaydProvider) Configure(ctx context.Context, req provider.ConfigureRe
 func (p *RelaydProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewPortAllocationResource,
+		NewPortBindingResource,
 	}
 }
 
@@ -83,7 +74,5 @@ func (p *RelaydProvider) DataSources(_ context.Context) []func() datasource.Data
 }
 
 func New(version string) func() provider.Provider {
-	return func() provider.Provider {
-		return &RelaydProvider{version: version}
-	}
+	return func() provider.Provider { return &RelaydProvider{version: version} }
 }

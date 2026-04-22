@@ -3,12 +3,12 @@
 page_title: "relayd_port_allocations Data Source - relayd"
 subcategory: ""
 description: |-
-  Lists relayd port allocations.
+  Lists relayd allocations.
 ---
 
 # relayd_port_allocations (Data Source)
 
-Lists relayd port allocations.
+Lists relayd allocations.
 
 ## Example Usage
 
@@ -21,7 +21,7 @@ data "relayd_port_allocations" "all" {}
 
 ### Read-Only
 
-- `allocations` (Attributes List) Current relayd port allocations in protocol-then-port order. (see [below for nested schema](#nestedatt--allocations))
+- `allocations` (Attributes List) Current relayd allocations in protocol-then-port order. (see [below for nested schema](#nestedatt--allocations))
 
 <a id="nestedatt--allocations"></a>
 ### Nested Schema for `allocations`
@@ -29,15 +29,7 @@ data "relayd_port_allocations" "all" {}
 Read-Only:
 
 - `created_at_ms` (Number)
-- `effective_host` (String)
-- `effective_target_port` (Number)
-- `error_kind` (String)
-- `host` (String)
-- `host_configured` (Boolean)
 - `id` (String)
-- `last_error` (String)
 - `port` (Number)
 - `protocol` (String)
-- `runtime_status` (String)
-- `target_port` (Number)
 - `updated_at_ms` (Number)

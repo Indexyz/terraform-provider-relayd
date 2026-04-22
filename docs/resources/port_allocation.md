@@ -3,20 +3,18 @@
 page_title: "relayd_port_allocation Resource - relayd"
 subcategory: ""
 description: |-
-  Manages a relayd port allocation.
+  Manages a relayd allocation that reserves a listen port.
 ---
 
 # relayd_port_allocation (Resource)
 
-Manages a relayd port allocation.
+Manages a relayd allocation that reserves a listen port.
 
 ## Example Usage
 
 ```terraform
 resource "relayd_port_allocation" "example" {
-  protocol    = "tcp"
-  target_port = 8080
-  host        = "127.0.0.1"
+  protocol = "tcp"
 }
 ```
 
@@ -26,23 +24,12 @@ resource "relayd_port_allocation" "example" {
 ### Required
 
 - `protocol` (String) Forwarding protocol. Supported values are `tcp` and `udp`.
-- `target_port` (Number) Desired upstream target port.
-
-### Optional
-
-- `host` (String) Desired upstream IP literal. Omit to leave the allocation in `rejecting_no_host` until a host is configured.
 
 ### Read-Only
 
 - `created_at_ms` (Number) Creation timestamp in Unix milliseconds.
-- `effective_host` (String) Runtime host currently applied by relayd.
-- `effective_target_port` (Number) Runtime target port currently applied by relayd.
-- `error_kind` (String) Runtime error kind reported by relayd, if any.
-- `host_configured` (Boolean) Whether a non-empty desired host is configured.
 - `id` (String) Server-generated allocation identifier.
-- `last_error` (String) Last runtime error message reported by relayd, if any.
 - `port` (Number) Allocated relay listen port.
-- `runtime_status` (String) Runtime status reported by relayd.
 - `updated_at_ms` (Number) Last update timestamp in Unix milliseconds.
 
 ## Import

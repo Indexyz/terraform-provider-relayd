@@ -5,7 +5,6 @@ package provider
 
 import (
 	"net/http"
-	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -18,19 +17,15 @@ func TestAccPortAllocationResource_basicLifecycle(t *testing.T) {
 	ts := newRelaydTestServer(t)
 	defer ts.Close()
 
-	host := "127.0.0.1"
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccPortAllocationConfig(ts.URL(), ts.Token(), "tcp", 8080, &host),
+				Config: testAccAllocationConfig(ts.URL(), ts.Token(), "tcp"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue("relayd_port_allocation.test", tfjsonpath.New("protocol"), knownvalue.StringExact("tcp")),
-					statecheck.ExpectKnownValue("relayd_port_allocation.test", tfjsonpath.New("target_port"), knownvalue.Int64Exact(8080)),
-					statecheck.ExpectKnownValue("relayd_port_allocation.test", tfjsonpath.New("host"), knownvalue.StringExact("127.0.0.1")),
-					statecheck.ExpectKnownValue("relayd_port_allocation.test", tfjsonpath.New("runtime_status"), knownvalue.StringExact("active")),
+					statecheck.ExpectKnownValue("relayd_port_allocation.test", tfjsonpath.New("port"), knownvalue.Int64Exact(10001)),
 				},
 			},
 			{
@@ -38,79 +33,33 @@ func TestAccPortAllocationResource_basicLifecycle(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
-			{
-				Config: testAccPortAllocationConfig(ts.URL(), ts.Token(), "tcp", 9090, &host),
-				ConfigStateChecks: []statecheck.StateCheck{
-					statecheck.ExpectKnownValue("relayd_port_allocation.test", tfjsonpath.New("target_port"), knownvalue.Int64Exact(9090)),
-				},
-			},
 		},
 	})
-
-	for _, path := range ts.requestPaths() {
-		if path == "/v1/ports/target" {
-			t.Fatal("provider unexpectedly used /v1/ports/target")
-		}
-	}
 }
 
-func TestAccPortAllocationResource_replacementScenarios(t *testing.T) {
+func TestAccPortAllocationResource_replaceOnProtocolChange(t *testing.T) {
 	ts := newRelaydTestServer(t)
 	defer ts.Close()
-
-	host := "127.0.0.1"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			{Config: testAccPortAllocationConfig(ts.URL(), ts.Token(), "tcp", 8080, &host)},
+			{Config: testAccAllocationConfig(ts.URL(), ts.Token(), "tcp")},
 			{
-				Config: testAccPortAllocationConfig(ts.URL(), ts.Token(), "udp", 8080, &host),
+				Config: testAccAllocationConfig(ts.URL(), ts.Token(), "udp"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue("relayd_port_allocation.test", tfjsonpath.New("protocol"), knownvalue.StringExact("udp")),
 				},
 			},
-			{
-				Config: testAccPortAllocationConfig(ts.URL(), ts.Token(), "udp", 8080, nil),
-				ConfigStateChecks: []statecheck.StateCheck{
-					statecheck.ExpectKnownValue("relayd_port_allocation.test", tfjsonpath.New("runtime_status"), knownvalue.StringExact("rejecting_no_host")),
-				},
-			},
 		},
 	})
 
-	if got := ts.requestCount(http.MethodPost, "/v1/ports"); got < 3 {
-		t.Fatalf("expected at least three create requests across replacement scenarios, got %d", got)
+	if got := ts.requestCount(http.MethodPost, "/v1/allocations"); got < 2 {
+		t.Fatalf("expected replacement to create a new allocation, got %d create requests", got)
 	}
-	if got := ts.requestCountPrefix(http.MethodDelete, "/v1/ports/"); got < 2 {
-		t.Fatalf("expected replacement scenarios to issue at least two delete requests, got %d", got)
-	}
-}
-
-func TestAccPortAllocationResource_createWithHostRollback(t *testing.T) {
-	ts := newRelaydTestServer(t)
-	defer ts.Close()
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		Steps: []resource.TestStep{
-			{
-				PreConfig: func() {
-					ts.setNextUpdateError("alloc-1", 503, "RuntimeUpdateFailed")
-				},
-				Config:      testAccPortAllocationConfig(ts.URL(), ts.Token(), "tcp", 8080, stringPtr("127.0.0.1")),
-				ExpectError: regexp.MustCompile(`RuntimeUpdateFailed`),
-			},
-			{
-				Config: testAccPortAllocationConfig(ts.URL(), ts.Token(), "tcp", 8080, nil),
-			},
-		},
-	})
-
-	if got := ts.requestCount(http.MethodDelete, "/v1/ports/alloc-1"); got != 1 {
-		t.Fatalf("expected exactly one rollback delete for alloc-1, got %d", got)
+	if got := ts.requestCountPrefix(http.MethodDelete, "/v1/allocations/"); got < 1 {
+		t.Fatalf("expected replacement to delete the old allocation, got %d delete requests", got)
 	}
 }
 
@@ -122,7 +71,7 @@ func TestAccPortAllocationResource_missingRefreshRemovesState(t *testing.T) {
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			{Config: testAccPortAllocationConfig(ts.URL(), ts.Token(), "tcp", 8080, nil)},
+			{Config: testAccAllocationConfig(ts.URL(), ts.Token(), "tcp")},
 			{
 				PreConfig: func() {
 					id := ts.firstAllocationID()
@@ -134,5 +83,3 @@ func TestAccPortAllocationResource_missingRefreshRemovesState(t *testing.T) {
 		},
 	})
 }
-
-func stringPtr(v string) *string { return &v }

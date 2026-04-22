@@ -77,15 +77,15 @@ func TestNormalizeBaseURL(t *testing.T) {
 	}
 }
 
-func TestSortPortAllocations(t *testing.T) {
-	allocations := []relaydPortAllocation{
+func TestSortAllocations(t *testing.T) {
+	allocations := []relaydAllocation{
 		{ID: "2", Protocol: "udp", Port: 2000},
 		{ID: "3", Protocol: "tcp", Port: 3000},
 		{ID: "1", Protocol: "tcp", Port: 1000},
 		{ID: "4", Protocol: "tcp", Port: 1000},
 	}
 
-	sortPortAllocations(allocations)
+	sortAllocations(allocations)
 
 	gotIDs := []string{allocations[0].ID, allocations[1].ID, allocations[2].ID, allocations[3].ID}
 	expectedIDs := []string{"1", "4", "3", "2"}
@@ -126,5 +126,59 @@ func TestRelaydClient_MapsPlainTextErrors(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "RuntimeUpdateFailed") {
 		t.Fatalf("expected plain text error to be preserved, got: %v", err)
+	}
+}
+
+
+func TestRelaydClient_DeleteBinding404IsSuccess(t *testing.T) {
+	ts := newRelaydTestServer(t)
+	defer ts.Close()
+
+	client, err := newRelaydClient(resolvedProviderConfig{BaseURL: ts.URL() + "/v1", BearerToken: ts.Token()})
+	if err != nil {
+		t.Fatalf("new client: %v", err)
+	}
+
+	if err := client.DeleteBinding(t.Context(), "missing-id"); err != nil {
+		t.Fatalf("expected binding delete 404 to be treated as success, got: %v", err)
+	}
+}
+
+func TestRelaydClient_NeverUsesCompatibilityPortsEndpoints(t *testing.T) {
+	ts := newRelaydTestServer(t)
+	defer ts.Close()
+
+	client, err := newRelaydClient(resolvedProviderConfig{BaseURL: ts.URL() + "/v1", BearerToken: ts.Token()})
+	if err != nil {
+		t.Fatalf("new client: %v", err)
+	}
+
+	allocation, err := client.CreateAllocation(t.Context(), createAllocationRequest{Protocol: "tcp"})
+	if err != nil {
+		t.Fatalf("create allocation: %v", err)
+	}
+	if _, err := client.ListAllocations(t.Context()); err != nil {
+		t.Fatalf("list allocations: %v", err)
+	}
+	if _, err := client.GetAllocation(t.Context(), allocation.ID); err != nil {
+		t.Fatalf("get allocation: %v", err)
+	}
+	if _, err := client.PutBinding(t.Context(), allocation.ID, putBindingRequest{Host: "127.0.0.1", TargetPort: 8080}); err != nil {
+		t.Fatalf("put binding: %v", err)
+	}
+	if _, err := client.GetBinding(t.Context(), allocation.ID); err != nil {
+		t.Fatalf("get binding: %v", err)
+	}
+	if err := client.DeleteBinding(t.Context(), allocation.ID); err != nil {
+		t.Fatalf("delete binding: %v", err)
+	}
+	if err := client.DeleteAllocation(t.Context(), allocation.ID); err != nil {
+		t.Fatalf("delete allocation: %v", err)
+	}
+
+	for _, path := range ts.requestPaths() {
+		if strings.HasPrefix(path, "/v1/ports") {
+			t.Fatalf("unexpected compatibility endpoint usage: %s", path)
+		}
 	}
 }

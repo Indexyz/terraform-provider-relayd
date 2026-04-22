@@ -21,6 +21,7 @@ provider "relayd" {
 ## Available surfaces
 
 - `relayd_port_allocation` resource
+- `relayd_port_binding` resource
 - `relayd_port_allocations` data source
 - `relayd_metrics` data source
 

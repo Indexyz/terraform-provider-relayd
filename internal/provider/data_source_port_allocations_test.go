@@ -21,11 +21,11 @@ func TestAccPortAllocationsDataSource(t *testing.T) {
 		t.Fatalf("new client: %v", err)
 	}
 
-	_, err = client.CreateAllocation(t.Context(), createPortAllocationRequest{Protocol: "udp", TargetPort: 5353})
+	_, err = client.CreateAllocation(t.Context(), createAllocationRequest{Protocol: "udp"})
 	if err != nil {
 		t.Fatalf("seed allocation: %v", err)
 	}
-	_, err = client.CreateAllocation(t.Context(), createPortAllocationRequest{Protocol: "tcp", TargetPort: 8080})
+	_, err = client.CreateAllocation(t.Context(), createAllocationRequest{Protocol: "tcp"})
 	if err != nil {
 		t.Fatalf("seed allocation: %v", err)
 	}
@@ -38,9 +38,7 @@ func TestAccPortAllocationsDataSource(t *testing.T) {
 			ConfigStateChecks: []statecheck.StateCheck{
 				statecheck.ExpectKnownValue("data.relayd_port_allocations.test", tfjsonpath.New("allocations"), knownvalue.ListSizeExact(2)),
 				statecheck.ExpectKnownValue("data.relayd_port_allocations.test", tfjsonpath.New("allocations").AtSliceIndex(0).AtMapKey("protocol"), knownvalue.StringExact("tcp")),
-				statecheck.ExpectKnownValue("data.relayd_port_allocations.test", tfjsonpath.New("allocations").AtSliceIndex(0).AtMapKey("target_port"), knownvalue.Int64Exact(8080)),
 				statecheck.ExpectKnownValue("data.relayd_port_allocations.test", tfjsonpath.New("allocations").AtSliceIndex(1).AtMapKey("protocol"), knownvalue.StringExact("udp")),
-				statecheck.ExpectKnownValue("data.relayd_port_allocations.test", tfjsonpath.New("allocations").AtSliceIndex(1).AtMapKey("target_port"), knownvalue.Int64Exact(5353)),
 			},
 		}},
 	})
