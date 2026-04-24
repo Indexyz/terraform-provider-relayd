@@ -33,7 +33,7 @@ func (p *RelaydProvider) Schema(_ context.Context, _ provider.SchemaRequest, res
 	resp.Schema = providerschema.Schema{
 		MarkdownDescription: "The relayd provider manages authenticated HTTP control-plane resources exposed by relayd.",
 		Attributes: map[string]providerschema.Attribute{
-			"base_url": providerschema.StringAttribute{MarkdownDescription: "Base URL for the relayd API server. If omitted, the provider uses the RELAYD_BASE_URL environment variable. The `/v1` API path is added automatically when necessary.", Optional: true},
+			"base_url":     providerschema.StringAttribute{MarkdownDescription: "Base URL for the relayd API server. If omitted, the provider uses the RELAYD_BASE_URL environment variable. The `/v1` API path is added automatically when necessary.", Optional: true},
 			"bearer_token": providerschema.StringAttribute{MarkdownDescription: "Bearer token for relayd API authentication. If omitted, the provider uses the RELAYD_BEARER_TOKEN environment variable.", Optional: true, Sensitive: true},
 		},
 	}

@@ -129,7 +129,6 @@ func TestRelaydClient_MapsPlainTextErrors(t *testing.T) {
 	}
 }
 
-
 func TestRelaydClient_DeleteBinding404IsSuccess(t *testing.T) {
 	ts := newRelaydTestServer(t)
 	defer ts.Close()

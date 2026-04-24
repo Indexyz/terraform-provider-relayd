@@ -47,23 +47,25 @@ func (r *PortBindingResource) Schema(_ context.Context, _ resource.SchemaRequest
 	resp.Schema = resourceschema.Schema{
 		MarkdownDescription: "Manages the binding attached to a relayd allocation.",
 		Attributes: map[string]resourceschema.Attribute{
-			"id": resourceschema.StringAttribute{MarkdownDescription: "Binding identifier, equal to the allocation identifier.", Computed: true, PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
-			"allocation_id": resourceschema.StringAttribute{MarkdownDescription: "Identifier of the allocation to bind.", Required: true, PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
-			"host": resourceschema.StringAttribute{MarkdownDescription: "Desired upstream IP literal.", Required: true},
-			"target_port": resourceschema.Int64Attribute{MarkdownDescription: "Desired upstream target port.", Required: true},
+			"id":                    resourceschema.StringAttribute{MarkdownDescription: "Binding identifier, equal to the allocation identifier.", Computed: true, PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
+			"allocation_id":         resourceschema.StringAttribute{MarkdownDescription: "Identifier of the allocation to bind.", Required: true, PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
+			"host":                  resourceschema.StringAttribute{MarkdownDescription: "Desired upstream IP literal.", Required: true},
+			"target_port":           resourceschema.Int64Attribute{MarkdownDescription: "Desired upstream target port.", Required: true},
 			"effective_target_port": resourceschema.Int64Attribute{MarkdownDescription: "Runtime target port currently applied by relayd.", Computed: true},
-			"effective_host": resourceschema.StringAttribute{MarkdownDescription: "Runtime host currently applied by relayd.", Computed: true},
-			"runtime_status": resourceschema.StringAttribute{MarkdownDescription: "Runtime status reported by relayd.", Computed: true},
-			"error_kind": resourceschema.StringAttribute{MarkdownDescription: "Runtime error kind reported by relayd, if any.", Computed: true},
-			"last_error": resourceschema.StringAttribute{MarkdownDescription: "Last runtime error message reported by relayd, if any.", Computed: true},
-			"created_at_ms": resourceschema.Int64Attribute{MarkdownDescription: "Creation timestamp in Unix milliseconds.", Computed: true},
-			"updated_at_ms": resourceschema.Int64Attribute{MarkdownDescription: "Last update timestamp in Unix milliseconds.", Computed: true},
+			"effective_host":        resourceschema.StringAttribute{MarkdownDescription: "Runtime host currently applied by relayd.", Computed: true},
+			"runtime_status":        resourceschema.StringAttribute{MarkdownDescription: "Runtime status reported by relayd.", Computed: true},
+			"error_kind":            resourceschema.StringAttribute{MarkdownDescription: "Runtime error kind reported by relayd, if any.", Computed: true},
+			"last_error":            resourceschema.StringAttribute{MarkdownDescription: "Last runtime error message reported by relayd, if any.", Computed: true},
+			"created_at_ms":         resourceschema.Int64Attribute{MarkdownDescription: "Creation timestamp in Unix milliseconds.", Computed: true},
+			"updated_at_ms":         resourceschema.Int64Attribute{MarkdownDescription: "Last update timestamp in Unix milliseconds.", Computed: true},
 		},
 	}
 }
 
 func (r *PortBindingResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil { return }
+	if req.ProviderData == nil {
+		return
+	}
 	client, ok := req.ProviderData.(*relaydClient)
 	if !ok {
 		resp.Diagnostics.AddError("Unexpected resource configure type", fmt.Sprintf("Expected *relaydClient, got %T.", req.ProviderData))
@@ -75,8 +77,12 @@ func (r *PortBindingResource) Configure(_ context.Context, req resource.Configur
 func (r *PortBindingResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan PortBindingResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() { return }
-	if !validateBindingModel(plan, &resp.Diagnostics) { return }
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if !validateBindingModel(plan, &resp.Diagnostics) {
+		return
+	}
 
 	binding, err := r.client.PutBinding(ctx, plan.AllocationID.ValueString(), putBindingRequest{Host: strings.TrimSpace(plan.Host.ValueString()), TargetPort: plan.TargetPort.ValueInt64()})
 	if err != nil {
@@ -90,7 +96,9 @@ func (r *PortBindingResource) Create(ctx context.Context, req resource.CreateReq
 func (r *PortBindingResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state PortBindingResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() { return }
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	binding, err := r.client.GetBinding(ctx, state.AllocationID.ValueString())
 	if err != nil {
@@ -108,8 +116,12 @@ func (r *PortBindingResource) Read(ctx context.Context, req resource.ReadRequest
 func (r *PortBindingResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan PortBindingResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() { return }
-	if !validateBindingModel(plan, &resp.Diagnostics) { return }
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if !validateBindingModel(plan, &resp.Diagnostics) {
+		return
+	}
 
 	binding, err := r.client.PutBinding(ctx, plan.AllocationID.ValueString(), putBindingRequest{Host: strings.TrimSpace(plan.Host.ValueString()), TargetPort: plan.TargetPort.ValueInt64()})
 	if err != nil {
@@ -123,7 +135,9 @@ func (r *PortBindingResource) Update(ctx context.Context, req resource.UpdateReq
 func (r *PortBindingResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state PortBindingResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() { return }
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	if err := r.client.DeleteBinding(ctx, state.AllocationID.ValueString()); err != nil {
 		addError(&resp.Diagnostics, "Unable to delete relayd binding", err)
 	}

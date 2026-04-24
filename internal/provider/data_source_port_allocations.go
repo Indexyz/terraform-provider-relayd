@@ -48,7 +48,9 @@ func (d *PortAllocationsDataSource) Schema(_ context.Context, _ datasource.Schem
 }
 
 func (d *PortAllocationsDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil { return }
+	if req.ProviderData == nil {
+		return
+	}
 	client, ok := req.ProviderData.(*relaydClient)
 	if !ok {
 		resp.Diagnostics.AddError("Unexpected data source configure type", fmt.Sprintf("Expected *relaydClient, got %T.", req.ProviderData))
@@ -67,12 +69,16 @@ func (d *PortAllocationsDataSource) Read(ctx context.Context, _ datasource.ReadR
 	for _, allocation := range allocations {
 		objectValue, diags := allocationToObjectValue(allocation)
 		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() { return }
+		if resp.Diagnostics.HasError() {
+			return
+		}
 		objects = append(objects, objectValue)
 	}
 	listValue, diags := types.ListValue(types.ObjectType{AttrTypes: allocationObjectTypes}, objects)
 	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() { return }
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	state := PortAllocationsDataSourceModel{Allocations: listValue}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

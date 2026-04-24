@@ -41,9 +41,9 @@ func (r *PortAllocationResource) Schema(_ context.Context, _ resource.SchemaRequ
 	resp.Schema = resourceschema.Schema{
 		MarkdownDescription: "Manages a relayd allocation that reserves a listen port.",
 		Attributes: map[string]resourceschema.Attribute{
-			"id": resourceschema.StringAttribute{MarkdownDescription: "Server-generated allocation identifier.", Computed: true, PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
-			"protocol": resourceschema.StringAttribute{MarkdownDescription: "Forwarding protocol. Supported values are `tcp` and `udp`.", Required: true, PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
-			"port": resourceschema.Int64Attribute{MarkdownDescription: "Allocated relay listen port.", Computed: true},
+			"id":            resourceschema.StringAttribute{MarkdownDescription: "Server-generated allocation identifier.", Computed: true, PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
+			"protocol":      resourceschema.StringAttribute{MarkdownDescription: "Forwarding protocol. Supported values are `tcp` and `udp`.", Required: true, PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
+			"port":          resourceschema.Int64Attribute{MarkdownDescription: "Allocated relay listen port.", Computed: true},
 			"created_at_ms": resourceschema.Int64Attribute{MarkdownDescription: "Creation timestamp in Unix milliseconds.", Computed: true},
 			"updated_at_ms": resourceschema.Int64Attribute{MarkdownDescription: "Last update timestamp in Unix milliseconds.", Computed: true},
 		},
@@ -51,7 +51,9 @@ func (r *PortAllocationResource) Schema(_ context.Context, _ resource.SchemaRequ
 }
 
 func (r *PortAllocationResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil { return }
+	if req.ProviderData == nil {
+		return
+	}
 	client, ok := req.ProviderData.(*relaydClient)
 	if !ok {
 		resp.Diagnostics.AddError("Unexpected resource configure type", fmt.Sprintf("Expected *relaydClient, got %T.", req.ProviderData))
@@ -63,8 +65,12 @@ func (r *PortAllocationResource) Configure(_ context.Context, req resource.Confi
 func (r *PortAllocationResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan PortAllocationResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() { return }
-	if !validateAllocationModel(plan, &resp.Diagnostics) { return }
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if !validateAllocationModel(plan, &resp.Diagnostics) {
+		return
+	}
 
 	allocation, err := r.client.CreateAllocation(ctx, createAllocationRequest{Protocol: strings.TrimSpace(plan.Protocol.ValueString())})
 	if err != nil {
@@ -78,7 +84,9 @@ func (r *PortAllocationResource) Create(ctx context.Context, req resource.Create
 func (r *PortAllocationResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state PortAllocationResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() { return }
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	allocation, err := r.client.GetAllocation(ctx, state.ID.ValueString())
 	if err != nil {
@@ -96,7 +104,9 @@ func (r *PortAllocationResource) Read(ctx context.Context, req resource.ReadRequ
 func (r *PortAllocationResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var state PortAllocationResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() { return }
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	allocation, err := r.client.GetAllocation(ctx, state.ID.ValueString())
 	if err != nil {
 		if isNotFoundError(err) {
@@ -113,7 +123,9 @@ func (r *PortAllocationResource) Update(ctx context.Context, req resource.Update
 func (r *PortAllocationResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state PortAllocationResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() { return }
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	if err := r.client.DeleteAllocation(ctx, state.ID.ValueString()); err != nil {
 		addError(&resp.Diagnostics, "Unable to delete relayd allocation", err)
 	}

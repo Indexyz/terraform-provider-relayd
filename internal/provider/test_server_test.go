@@ -50,15 +50,15 @@ func newRelaydTestServer(t *testing.T) *relaydTestServer {
 	t.Helper()
 
 	ts := &relaydTestServer{
-		t:                        t,
-		token:                    "test-token",
-		nextID:                   1,
-		allocations:              map[string]relaydAllocation{},
-		bindings:                 map[string]relaydBinding{},
-		metrics:                  map[string]int64{"allocations_total": 0, "tcp_active_sessions": 2},
-		nextPutBindingErrorByID:  map[string]*responseConfig{},
+		t:                         t,
+		token:                     "test-token",
+		nextID:                    1,
+		allocations:               map[string]relaydAllocation{},
+		bindings:                  map[string]relaydBinding{},
+		metrics:                   map[string]int64{"allocations_total": 0, "tcp_active_sessions": 2},
+		nextPutBindingErrorByID:   map[string]*responseConfig{},
 		nextDeleteAllocationError: map[string]*responseConfig{},
-		nextDeleteBindingError:   map[string]*responseConfig{},
+		nextDeleteBindingError:    map[string]*responseConfig{},
 	}
 
 	ts.server = httptest.NewServer(http.HandlerFunc(ts.handle))
@@ -312,7 +312,6 @@ func (ts *relaydTestServer) handleMetrics(w http.ResponseWriter) {
 	writeJSON(w, http.StatusOK, ts.metrics)
 }
 
-
 func (ts *relaydTestServer) requestPaths() []string {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
@@ -336,12 +335,6 @@ func (ts *relaydTestServer) removeBinding(id string) {
 	delete(ts.bindings, id)
 }
 
-func (ts *relaydTestServer) setNextPutBindingError(id string, status int, body string) {
-	ts.mu.Lock()
-	defer ts.mu.Unlock()
-	ts.nextPutBindingErrorByID[id] = &responseConfig{Status: status, Body: body}
-}
-
 func (ts *relaydTestServer) firstAllocationID() string {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
@@ -354,18 +347,6 @@ func (ts *relaydTestServer) firstAllocationID() string {
 		return ""
 	}
 	return ids[0]
-}
-
-func (ts *relaydTestServer) allocationCount() int {
-	ts.mu.Lock()
-	defer ts.mu.Unlock()
-	return len(ts.allocations)
-}
-
-func (ts *relaydTestServer) bindingCount() int {
-	ts.mu.Lock()
-	defer ts.mu.Unlock()
-	return len(ts.bindings)
 }
 
 func (ts *relaydTestServer) requestCount(method, path string) int {
@@ -416,10 +397,10 @@ resource "relayd_port_allocation" "test" {
 `, protocol)
 }
 
-func testAccBindingConfig(baseURL, token, protocol string, host string, targetPort int) string {
+func testAccBindingConfig(baseURL, token, host string, targetPort int) string {
 	return testAccProviderConfig(baseURL, token) + fmt.Sprintf(`
 resource "relayd_port_allocation" "alloc" {
-  protocol = %q
+  protocol = "tcp"
 }
 
 resource "relayd_port_binding" "test" {
@@ -427,7 +408,7 @@ resource "relayd_port_binding" "test" {
   host          = %q
   target_port   = %d
 }
-`, protocol, host, targetPort)
+`, host, targetPort)
 }
 
 func testAccAllocationAndBindingDetachedConfig(baseURL, token, protocol string) string {

@@ -22,7 +22,7 @@ func TestAccPortBindingResource_basicLifecycle(t *testing.T) {
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccBindingConfig(ts.URL(), ts.Token(), "tcp", "127.0.0.1", 8080),
+				Config: testAccBindingConfig(ts.URL(), ts.Token(), "127.0.0.1", 8080),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue("relayd_port_binding.test", tfjsonpath.New("host"), knownvalue.StringExact("127.0.0.1")),
 					statecheck.ExpectKnownValue("relayd_port_binding.test", tfjsonpath.New("target_port"), knownvalue.Int64Exact(8080)),
@@ -35,7 +35,7 @@ func TestAccPortBindingResource_basicLifecycle(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{
-				Config: testAccBindingConfig(ts.URL(), ts.Token(), "tcp", "127.0.0.2", 9090),
+				Config: testAccBindingConfig(ts.URL(), ts.Token(), "127.0.0.2", 9090),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue("relayd_port_binding.test", tfjsonpath.New("host"), knownvalue.StringExact("127.0.0.2")),
 					statecheck.ExpectKnownValue("relayd_port_binding.test", tfjsonpath.New("target_port"), knownvalue.Int64Exact(9090)),
@@ -53,7 +53,7 @@ func TestAccPortBindingResource_deleteKeepsAllocation(t *testing.T) {
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			{Config: testAccBindingConfig(ts.URL(), ts.Token(), "tcp", "127.0.0.1", 8080)},
+			{Config: testAccBindingConfig(ts.URL(), ts.Token(), "127.0.0.1", 8080)},
 			{
 				Config: testAccAllocationAndBindingDetachedConfig(ts.URL(), ts.Token(), "tcp"),
 				ConfigStateChecks: []statecheck.StateCheck{
@@ -72,7 +72,7 @@ func TestAccPortBindingResource_invalidHost(t *testing.T) {
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{{
-			Config:      testAccBindingConfig(ts.URL(), ts.Token(), "tcp", "invalid-host", 8080),
+			Config:      testAccBindingConfig(ts.URL(), ts.Token(), "invalid-host", 8080),
 			ExpectError: regexp.MustCompile(`InvalidHost|invalid host`),
 		}},
 	})
@@ -86,7 +86,7 @@ func TestAccPortBindingResource_missingRefreshRemovesState(t *testing.T) {
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			{Config: testAccBindingConfig(ts.URL(), ts.Token(), "tcp", "127.0.0.1", 8080)},
+			{Config: testAccBindingConfig(ts.URL(), ts.Token(), "127.0.0.1", 8080)},
 			{
 				PreConfig: func() {
 					id := ts.firstAllocationID()
