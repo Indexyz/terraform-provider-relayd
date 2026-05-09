@@ -37,6 +37,30 @@ func TestAccPortAllocationResource_basicLifecycle(t *testing.T) {
 	})
 }
 
+func TestAccPortAllocationResource_dualProtocolLifecycle(t *testing.T) {
+	ts := newRelaydTestServer(t)
+	defer ts.Close()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAllocationConfig(ts.URL(), ts.Token(), "both"),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectKnownValue("relayd_port_allocation.test", tfjsonpath.New("protocol"), knownvalue.StringExact("both")),
+					statecheck.ExpectKnownValue("relayd_port_allocation.test", tfjsonpath.New("port"), knownvalue.Int64Exact(10001)),
+				},
+			},
+			{
+				ResourceName:      "relayd_port_allocation.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestAccPortAllocationResource_replaceOnProtocolChange(t *testing.T) {
 	ts := newRelaydTestServer(t)
 	defer ts.Close()

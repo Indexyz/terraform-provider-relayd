@@ -81,14 +81,15 @@ func TestSortAllocations(t *testing.T) {
 	allocations := []relaydAllocation{
 		{ID: "2", Protocol: "udp", Port: 2000},
 		{ID: "3", Protocol: "tcp", Port: 3000},
+		{ID: "5", Protocol: "both", Port: 4000},
 		{ID: "1", Protocol: "tcp", Port: 1000},
 		{ID: "4", Protocol: "tcp", Port: 1000},
 	}
 
 	sortAllocations(allocations)
 
-	gotIDs := []string{allocations[0].ID, allocations[1].ID, allocations[2].ID, allocations[3].ID}
-	expectedIDs := []string{"1", "4", "3", "2"}
+	gotIDs := []string{allocations[0].ID, allocations[1].ID, allocations[2].ID, allocations[3].ID, allocations[4].ID}
+	expectedIDs := []string{"5", "1", "4", "3", "2"}
 	for i := range expectedIDs {
 		if gotIDs[i] != expectedIDs[i] {
 			t.Fatalf("unexpected ordering: got %v want %v", gotIDs, expectedIDs)

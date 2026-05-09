@@ -42,7 +42,7 @@ func (r *PortAllocationResource) Schema(_ context.Context, _ resource.SchemaRequ
 		MarkdownDescription: "Manages a relayd allocation that reserves a listen port.",
 		Attributes: map[string]resourceschema.Attribute{
 			"id":            resourceschema.StringAttribute{MarkdownDescription: "Server-generated allocation identifier.", Computed: true, PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
-			"protocol":      resourceschema.StringAttribute{MarkdownDescription: "Forwarding protocol. Supported values are `tcp` and `udp`.", Required: true, PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
+			"protocol":      resourceschema.StringAttribute{MarkdownDescription: "Forwarding protocol. Supported values are `tcp`, `udp`, and `both`.", Required: true, PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
 			"port":          resourceschema.Int64Attribute{MarkdownDescription: "Allocated relay listen port.", Computed: true},
 			"created_at_ms": resourceschema.Int64Attribute{MarkdownDescription: "Creation timestamp in Unix milliseconds.", Computed: true},
 			"updated_at_ms": resourceschema.Int64Attribute{MarkdownDescription: "Last update timestamp in Unix milliseconds.", Computed: true},
@@ -145,8 +145,8 @@ func validateAllocationModel(model PortAllocationResourceModel, diags *diag.Diag
 		return false
 	}
 	protocol := strings.TrimSpace(model.Protocol.ValueString())
-	if protocol != "tcp" && protocol != "udp" {
-		diags.AddError("Invalid protocol", "protocol must be either `tcp` or `udp`.")
+	if protocol != "tcp" && protocol != "udp" && protocol != "both" {
+		diags.AddError("Invalid protocol", "protocol must be `tcp`, `udp`, or `both`.")
 		return false
 	}
 	return true

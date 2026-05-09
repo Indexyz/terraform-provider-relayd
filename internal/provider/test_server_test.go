@@ -140,7 +140,7 @@ func (ts *relaydTestServer) handleCreateAllocation(w http.ResponseWriter, body [
 		writePlainError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if req.Protocol != "tcp" && req.Protocol != "udp" {
+	if req.Protocol != "tcp" && req.Protocol != "udp" && req.Protocol != "both" {
 		writePlainError(w, http.StatusBadRequest, "invalid protocol")
 		return
 	}
